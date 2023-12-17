@@ -221,7 +221,7 @@ HRESULT DirectX::GetMetadataFromEXRFile(const wchar_t* szFile, TexMetadata& meta
     if (nameLength > 0)
     {
         fileName.resize(nameLength);
-        const int result = WideCharToMultiByte(CP_UTF8, 0, szFile, -1, fileName.data(), nameLength, nullptr, nullptr);
+        const int result = WideCharToMultiByte(CP_UTF8, 0, szFile, -1, const_cast<char*>(fileName.data()), nameLength, nullptr, nullptr);
         if (result <= 0)
         {
             fileName.clear();
@@ -328,7 +328,7 @@ HRESULT DirectX::LoadFromEXRFile(const wchar_t* szFile, TexMetadata* metadata, S
     if (nameLength > 0)
     {
         fileName.resize(nameLength);
-        const int result = WideCharToMultiByte(CP_UTF8, 0, szFile, -1, fileName.data(), nameLength, nullptr, nullptr);
+        const int result = WideCharToMultiByte(CP_UTF8, 0, szFile, -1, const_cast<char*>(fileName.data()), nameLength, nullptr, nullptr);
         if (result <= 0)
         {
             fileName.clear();
@@ -465,7 +465,7 @@ HRESULT DirectX::SaveToEXRFile(const Image& image, const wchar_t* szFile)
     if (nameLength > 0)
     {
         fileName.resize(nameLength);
-        const int result = WideCharToMultiByte(CP_UTF8, 0, szFile, -1, fileName.data(), nameLength, nullptr, nullptr);
+        const int result = WideCharToMultiByte(CP_UTF8, 0, szFile, -1, const_cast<char*>(fileName.data()), nameLength, nullptr, nullptr);
         if (result <= 0)
         {
             fileName.clear();
