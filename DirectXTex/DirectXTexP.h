@@ -158,6 +158,7 @@
 #define XM_ALIGNED_DATA(x) __declspec(align(x))
 #endif
 
+#include <d3d12.h>
 #include "DirectXTex.h"
 
 #ifdef _WIN32

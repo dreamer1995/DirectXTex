@@ -57,9 +57,6 @@
     <ClCompile Include="DirectXTexConvert.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DirectXTexD3D11.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DirectXTexDDS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -97,6 +94,8 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Auxiliary\DirectXTexEXR.cpp" />
+    <ClCompile Include="DirectXTexD3D11.cpp" />
+    <ClCompile Include="DirectXTexD3D12.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CLInclude Include="BC.h">
