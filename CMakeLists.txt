@@ -3,7 +3,7 @@
 
 cmake_minimum_required (VERSION 3.20)
 
-set(DIRECTXTEX_VERSION 2.0.1)
+set(DIRECTXTEX_VERSION 2.0.2)
 
 if(WINDOWS_STORE OR (DEFINED XBOX_CONSOLE_TARGET))
   set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
@@ -52,9 +52,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/CMake")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/CMake")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/CMake")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 if(DEFINED VCPKG_TARGET_ARCHITECTURE)
     set(DIRECTX_ARCH ${VCPKG_TARGET_ARCHITECTURE})
@@ -65,6 +65,14 @@ elseif(CMAKE_GENERATOR_PLATFORM MATCHES "^[Xx]64$")
 elseif(CMAKE_GENERATOR_PLATFORM MATCHES "^[Aa][Rr][Mm]$")
     set(DIRECTX_ARCH arm)
 elseif(CMAKE_GENERATOR_PLATFORM MATCHES "^[Aa][Rr][Mm]64$")
+    set(DIRECTX_ARCH arm64)
+elseif(CMAKE_VS_PLATFORM_NAME_DEFAULT MATCHES "^[Ww][Ii][Nn]32$")
+    set(DIRECTX_ARCH x86)
+elseif(CMAKE_VS_PLATFORM_NAME_DEFAULT MATCHES "^[Xx]64$")
+    set(DIRECTX_ARCH x64)
+elseif(CMAKE_VS_PLATFORM_NAME_DEFAULT MATCHES "^[Aa][Rr][Mm]$")
+    set(DIRECTX_ARCH arm)
+elseif(CMAKE_VS_PLATFORM_NAME_DEFAULT MATCHES "^[Aa][Rr][Mm]64$")
     set(DIRECTX_ARCH arm64)
 endif()
 
@@ -349,7 +357,6 @@ join_paths(DIRECTXTEX_LIBDIR_FOR_PKG_CONFIG "\${prefix}"     "${CMAKE_INSTALL_LI
 set(DIRECTXTEX_DEP_L "")
 if(ENABLE_OPENEXR_SUPPORT)
   list(APPEND DIRECTXTEX_DEP_L "OpenEXR")
-  list(APPEND DIRECTXTEX_DEP_L "zlib")
 endif()
 if(directxmath_FOUND)
   list(APPEND DIRECTXTEX_DEP_L "DirectXMath")
@@ -371,9 +378,9 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/DirectXTex.pc"
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 #--- Command-line tools
-if(BUILD_TOOLS AND BUILD_DX11 AND WIN32)
-  set(TOOL_EXES texassemble texconv texdiag)
+set(TOOL_EXES "")
 
+if(BUILD_TOOLS AND WIN32)
   add_executable(texassemble
     Texassemble/texassemble.cpp
     Texassemble/texassemble.rc
@@ -381,7 +388,10 @@ if(BUILD_TOOLS AND BUILD_DX11 AND WIN32)
     Texassemble/AnimatedGif.cpp)
   target_link_libraries(texassemble PRIVATE ${PROJECT_NAME} ole32.lib version.lib)
   source_group(texassemble REGULAR_EXPRESSION Texassemble/*.*)
+  list(APPEND TOOL_EXES texassemble)
+endif()
 
+if(BUILD_TOOLS AND BUILD_DX11 AND WIN32)
   add_executable(texconv
     Texconv/texconv.cpp
     Texconv/texconv.rc
@@ -390,23 +400,29 @@ if(BUILD_TOOLS AND BUILD_DX11 AND WIN32)
     Texconv/PortablePixMap.cpp)
   target_link_libraries(texconv PRIVATE ${PROJECT_NAME} ole32.lib shell32.lib version.lib)
   source_group(texconv REGULAR_EXPRESSION Texconv/*.*)
+  list(APPEND TOOL_EXES texconv)
 
+  if(BC_USE_OPENMP)
+    target_link_libraries(texconv PRIVATE OpenMP::OpenMP_CXX)
+  endif()
+endif()
+
+if(BUILD_TOOLS AND WIN32)
   add_executable(texdiag
     Texdiag/texdiag.cpp
     Texdiag/texdiag.rc
     Texdiag/settings.manifest)
   target_link_libraries(texdiag PRIVATE ${PROJECT_NAME} ole32.lib version.lib)
   source_group(texdiag REGULAR_EXPRESSION Texdiag/*.*)
+  list(APPEND TOOL_EXES texdiag)
+endif()
 
-  if(BC_USE_OPENMP)
-    target_link_libraries(texconv PRIVATE OpenMP::OpenMP_CXX)
-  endif()
-
+if(BUILD_TOOLS AND WIN32)
   if(ENABLE_OPENEXR_SUPPORT)
     foreach(t IN LISTS TOOL_EXES)
       target_include_directories(${t} PRIVATE Auxiliary)
       target_link_libraries(${t} PRIVATE ${OPENEXR_ILMIMF_LIBRARY})
-      target_compile_options(${t} PRIVATE -DUSE_OPENEXR)
+      target_compile_definitions(${t} PRIVATE USE_OPENEXR)
     endforeach()
   endif()
 endif()
@@ -552,7 +568,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     endforeach()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     foreach(t IN LISTS TOOL_EXES ITEMS ${PROJECT_NAME})
-      target_compile_options(${t} PRIVATE -Wno-ignored-attributes)
+      target_compile_options(${t} PRIVATE "-Wno-ignored-attributes" "-Walloc-size-larger-than=4GB")
     endforeach()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     foreach(t IN LISTS TOOL_EXES ITEMS ${PROJECT_NAME})
@@ -650,6 +666,13 @@ endif()
 
 if(BUILD_TOOLS AND BUILD_DX11 AND WIN32)
   set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT texconv)
+endif()
+
+if(BUILD_TOOLS AND (NOT VCPKG_TOOLCHAIN))
+    foreach(t IN LISTS TOOL_EXES)
+      install(TARGETS ${t}
+         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endforeach()
 endif()
 
 #--- Test suite

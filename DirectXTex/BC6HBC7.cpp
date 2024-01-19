@@ -339,6 +339,12 @@ namespace DirectX
         LDRColorA() = default;
         LDRColorA(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _a) noexcept : r(_r), g(_g), b(_b), a(_a) {}
 
+        LDRColorA(LDRColorA const&) = default;
+        LDRColorA& operator= (const LDRColorA&) = default;
+
+        LDRColorA(LDRColorA&&) = default;
+        LDRColorA& operator= (LDRColorA&&) = default;
+
         const uint8_t& operator [] (_In_range_(0, 3) size_t uElement) const noexcept
         {
             switch (uElement)
@@ -449,9 +455,14 @@ namespace
         int r, g, b;
         int pad;
 
-    public:
         INTColor() = default;
         INTColor(int nr, int ng, int nb) noexcept : r(nr), g(ng), b(nb), pad(0) {}
+
+        INTColor(INTColor const&) = default;
+        INTColor& operator= (const INTColor&) = default;
+
+        INTColor(INTColor&&) = default;
+        INTColor& operator= (INTColor&&) = default;
 
         INTColor& operator += (_In_ const INTColor& c) noexcept
         {
@@ -2681,7 +2692,14 @@ void D3DX_BC7::Decode(HDRColorA* pOut) const noexcept
 
         for (i = 0; i < uNumEndPts; i++)
         {
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
             c[i] = Unquantize(c[i], RGBAPrecWithP);
+#ifdef __GNUC_
+#pragma GCC diagnostic pop
+#endif
         }
 
         uint8_t w1[NUM_PIXELS_PER_BLOCK], w2[NUM_PIXELS_PER_BLOCK];
@@ -3399,8 +3417,15 @@ float D3DX_BC7::Refine(const EncodeParams* pEP, size_t uShape, size_t uRotation,
 
     for (size_t p = 0; p <= uPartitions; p++)
     {
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
         aOrgEndPts[p].A = Quantize(aEndPts[p].A, ms_aInfo[pEP->uMode].RGBAPrecWithP);
         aOrgEndPts[p].B = Quantize(aEndPts[p].B, ms_aInfo[pEP->uMode].RGBAPrecWithP);
+#ifdef __GNUC_
+#pragma GCC diagnostic pop
+#endif
     }
 
     LDREndPntPair newEndPts1[BC7_MAX_REGIONS];
